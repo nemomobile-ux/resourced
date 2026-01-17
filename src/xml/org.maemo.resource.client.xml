@@ -1,0 +1,31 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+
+<node>
+    <interface name="org.freedesktop.DBus.Introspectable">
+        <method name="Introspect">
+            <arg name="data" direction="out" type="s"/>
+        </method>
+    </interface>
+
+    <interface name="org.maemo.resource.client">
+        <!-- Acquire resources -->
+        <method name="acquire">
+            <arg name="resources" direction="in" type="as"/>
+        </method>
+
+        <!-- Update resources (release old, acquire new) -->
+        <method name="update">
+            <arg name="resources" direction="in" type="as"/>
+        </method>
+
+        <!-- Release all resources -->
+        <method name="release"/>
+
+        <!-- Notify signal -->
+        <signal name="Notify">
+            <arg name="event" type="s"/>
+            <arg name="resource" type="s"/>
+        </signal>
+    </interface>
+</node>

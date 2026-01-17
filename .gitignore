@@ -1,0 +1,14 @@
+CMakeLists.txt.user*
+*.o
+*.so
+*.qmlc
+moc_*
+qrc_*
+.qmake.stash
+*.spec.*
+documentation.list
+Makefile
+installroot/
+build/
+RPMS/
+debug*.list

@@ -1,0 +1,13 @@
+[Unit]
+Description=NemoMobile Resource Manager Daemon
+After=dbus.service
+Requires=dbus.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/resourced
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target
