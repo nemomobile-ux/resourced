@@ -39,8 +39,8 @@ ResourceClient* ResourceManager::createClient(const QDBusMessage& message, int p
 
     m_clients.append(client);
 
-    Logger::log(Logger::Info, "ResourceManager", "Client created:" + message.service());
-    Logger::log(Logger::Info, "ResourceManager", "priority:" + QString::number(priority));
+    qCDebug(lcResourceDaemonCoreLog) << "Client created:" << message.service();
+    qCDebug(lcResourceDaemonCoreLog) << "priority:" << QString::number(priority);
 
     return client;
 }
@@ -50,7 +50,7 @@ void ResourceManager::destroyClient(ResourceClient* client)
     if (!client)
         return;
 
-    Logger::log(Logger::Info, "ResourceManager", "Client destroyed" + client->objectPath());
+    qCDebug(lcResourceDaemonCoreLog) << "Client destroyed" << client->objectPath();
 
     releaseAll(client);
     m_clients.removeAll(client);
@@ -114,18 +114,18 @@ void ResourceManager::emitGranted(ResourceClient* client)
 
     sig << 9
         << client->clientType()
-        << client->clientID()
-        << client->clientReqqno()
-        << 0
+        << (uint)client->clientID()
+        << (uint)client->clientReqqno()
+        << (uint)0
         << "ok";
 
     QDBusConnection::systemBus().send(sig);
 
-    Logger::log(Logger::Info, "ResourceManager", "Granted resource");
-    Logger::log(Logger::Info, "ResourceManager", "rtype=" + client->clientType());
-    Logger::log(Logger::Info, "ResourceManager", "id=" + client->clientID());
-    Logger::log(Logger::Info, "ResourceManager", "reqno=" + client->clientReqqno());
-    Logger::log(Logger::Info, "ResourceManager", "to" + client->objectPath());
+    qCDebug(lcResourceDaemonCoreLog) << "Granted resource"
+                    << "rtype=" << client->clientType()
+                    << "id=" << client->clientID()
+                    << "reqno=" << client->clientReqqno()
+                    << "to" << client->objectPath();
 
     QDBusMessage status = QDBusMessage::createSignal(
         client->objectPath(),
@@ -151,14 +151,14 @@ void ResourceManager::grant(ResourceClient* client,
 
     client->notifyGranted(resource);
 
-    Logger::log(Logger::Info, "ResourceManager", "Granted" + resource + " to " + client->objectPath());
+    qCDebug(lcResourceDaemonCoreLog) << "Granted" + resource + " to " + client->objectPath();
 }
 
 void ResourceManager::preempt(ResourceClient* oldClient,
     ResourceClient* newClient,
     const QString& resource)
 {
-    Logger::log(Logger::Info, "ResourceManager", "Preempting" + resource + " from " + oldClient->objectPath() + " to " + newClient->objectPath());
+    qCDebug(lcResourceDaemonCoreLog) <<  "Preempting" + resource + " from " + oldClient->objectPath() + " to " + newClient->objectPath();
 
     oldClient->removeResource(resource);
     oldClient->notifyLost(resource);

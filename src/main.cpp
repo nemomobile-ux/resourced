@@ -30,15 +30,15 @@ int main(int argc, char* argv[])
     app.setApplicationName("resourced");
     app.setOrganizationName("org.nemomobile");
 
-    Logger::log(Logger::Info, "main", "Starting resourced daemon...");
+    qCDebug(lcResourceDaemonCoreLog) <<  "Starting resourced daemon...";
     QDBusConnection bus = QDBusConnection::systemBus();
     if (!bus.isConnected()) {
-        Logger::log(Logger::Error, "main", "Cannot connect to system D-Bus:" + bus.lastError().message());
+        qCWarning(lcResourceDaemonCoreLog) << "Cannot connect to system D-Bus:" << bus.lastError().message();
         return -1;
     }
 
     if (!bus.registerService("org.maemo.resource.manager")) {
-        Logger::log(Logger::Error, "main", "Cannot register D-Bus service:" + bus.lastError().message());
+        qCWarning(lcResourceDaemonCoreLog) << "Cannot register D-Bus service:" << bus.lastError().message();
         return -1;
     }
 
@@ -49,9 +49,9 @@ int main(int argc, char* argv[])
     if (!bus.registerVirtualObject(
             "/org/maemo/resource/manager",
             &adaptor)) {
-        Logger::log(Logger::Error, "main", "Failed to register virtual object on system bus");
+        qCWarning(lcResourceDaemonCoreLog) << "Failed to register virtual object on system bus";
     }
 
-    Logger::log(Logger::Info, "main", "resourced started, waiting for clients...");
+    qCDebug(lcResourceDaemonCoreLog) << "resourced started, waiting for clients...";
     return app.exec();
 }

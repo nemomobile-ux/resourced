@@ -79,10 +79,10 @@ bool ClientAdaptor::handleMessage(const QDBusMessage& message, const QDBusConnec
     QDBusMessage reply = message.createReply(replyArgs);
     connection.send(reply);
 
-    Logger::log(Logger::Debug, "ClientAdaptor", "==== send messsage ==========");
-    Logger::log(Logger::Debug, "ClientAdaptor", "Type   : " + replyArgs[0].toInt());
-    Logger::log(Logger::Debug, "ClientAdaptor", "ID     : " + replyArgs[1].toUInt());
-    Logger::log(Logger::Debug, "ClientAdaptor", "Req NO : " + replyArgs[2].toUInt());
+    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
+    qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
+    qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     return true;
 }
@@ -90,12 +90,12 @@ bool ClientAdaptor::handleMessage(const QDBusMessage& message, const QDBusConnec
 void ClientAdaptor::printDebug(const QDBusMessage& message)
 {
     if (message.arguments().count() < 3) {
-        Logger::log(Logger::Debug, "ClientAdaptor", "==== skip system message ===");
+        qCDebug(lcResourceDaemonCoreLog) << "==== skip system message ===";
         return;
     }
 
-    Logger::log(Logger::Debug, "ClientAdaptor", "==== got messsage ==========");
-    Logger::log(Logger::Debug, "ClientAdaptor", "Type   : " + message.arguments()[0].toInt());
-    Logger::log(Logger::Debug, "ClientAdaptor", "ID     : " + message.arguments()[1].toUInt());
-    Logger::log(Logger::Debug, "ClientAdaptor", "Req NO : " + message.arguments()[2].toUInt());
+    qCDebug(lcResourceDaemonCoreLog) << "==== got messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) <<  "Type   : " << message.arguments()[0].toInt();
+    qCDebug(lcResourceDaemonCoreLog) <<  "ID     : " << message.arguments()[1].toUInt();
+    qCDebug(lcResourceDaemonCoreLog) <<  "Req NO : " << message.arguments()[2].toUInt();
 }

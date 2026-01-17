@@ -20,17 +20,8 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <QString>
-class Logger {
-public:
-    enum Level {
-        Debug,
-        Info,
-        Warning,
-        Error
-    };
+#include <QLoggingCategory>
 
-    static void log(Level level, const QString& context, const QString& message);
-};
+Q_DECLARE_LOGGING_CATEGORY(lcResourceDaemonCoreLog)
 
 #endif // LOGGER_H

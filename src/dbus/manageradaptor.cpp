@@ -144,7 +144,7 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
     ResourceClient* client = nullptr;
 
     if (args.size() != 10) {
-        Logger::log(Logger::Error, "ManagerAdaptor", "Wrong arguments");
+        qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Wrong arguments";
         replyArgs << 0 << 0 << 0 << -1 << "Invalid argument count";
     } else {
 
@@ -178,7 +178,7 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
             clientAdaptor);
 
         if (!ok) {
-            Logger::log(Logger::Error, "ManagerAdaptor", "Cannot register client object" + path);
+            qCWarning(lcResourceDaemonCoreLog) << "Cannot register client object" + path;
             replyArgs << 0 << 0 << 0 << -1 << "Cannot register client object";
         } else {
             replyArgs << (int)9
@@ -189,10 +189,10 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
         }
     }
 
-    Logger::log(Logger::Info, "ManagerAdaptor", "==== send messsage ==========");
-    Logger::log(Logger::Info, "ManagerAdaptor", "Type   : " + replyArgs[0].toInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "ID     : " + replyArgs[1].toUInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "Req NO : " + replyArgs[2].toUInt());
+    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
+    qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
+    qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     QDBusMessage reply = message.createReply(replyArgs);
     connection.call(reply);
@@ -213,18 +213,18 @@ void ManagerAdaptor::unregisterClient(const QDBusObjectPath& path)
     }
 
     if (!client) {
-        Logger::log(Logger::Error, "ManagerAdaptor", "unregisterClient: no such client" + path.path());
+        qCWarning(lcResourceDaemonCoreLog) <<  "unregisterClient: no such client" + path.path();
         return;
     }
 
     // Only the owner can unregister
     if (parent()->getMessage().service() != client->objectPath()) {
-        Logger::log(Logger::Error, "ManagerAdaptor", "unregisterClient denied for sender" + parent()->getMessage().service());
+        qCWarning(lcResourceDaemonCoreLog) <<  "unregisterClient denied for sender" + parent()->getMessage().service();
         return;
     }
 
     parent()->destroyClient(client);
-    Logger::log(Logger::Info, "ManagerAdaptor", "Client unregistered:" + path.path());
+    qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" + path.path();
 }
 
 void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConnection& connection)
@@ -238,12 +238,11 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
     for (auto c : parent()->clients()) {
         if (c->clientID() == rsetId) {
             client = c;
-            Logger::log(Logger::Debug, "ManagerAdaptor", "FOUND CLIENT");
             break;
         }
     }
     if (!client) {
-        Logger::log(Logger::Error, "ManagerAdaptor", "acquireClient: client not found:" + rsetId);
+        qCDebug(lcResourceDaemonCoreLog) << "acquireClient: client not found:" << rsetId;
         return;
     }
 
@@ -256,17 +255,17 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
 
     QDBusMessage reply = message.createReply(replyArgs);
 
-    Logger::log(Logger::Info, "ManagerAdaptor", "==== send messsage ==========");
-    Logger::log(Logger::Info, "ManagerAdaptor", "Type   : " + replyArgs[0].toInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "ID     : " + replyArgs[1].toUInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "Req NO : " + replyArgs[2].toUInt());
+    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
+    qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
+    qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     connection.send(reply);
 
-    Logger::log(Logger::Info, "ManagerAdaptor", "ACQUIRE completed for client" + client->objectPath());
+    qCDebug(lcResourceDaemonCoreLog) << "ACQUIRE completed for client" + client->objectPath();
 
     if (client->serviceName().isEmpty()) {
-        Logger::log(Logger::Error, "ManagerAdaptor", "Client serviceName is empty, cannot call grant()");
+        qCWarning(lcResourceDaemonCoreLog) << "Client serviceName is empty, cannot call grant()";
         return;
     }
 
@@ -283,22 +282,22 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
           << (uint)1024; // обычно mask/share
 
     connection.send(grant);
-    Logger::log(Logger::Info, "ManagerAdaptor", "Sent grant() to client:");
-    Logger::log(Logger::Info, "ManagerAdaptor", client->objectPath());
-    Logger::log(Logger::Info, "ManagerAdaptor", "rtype=" + 5);
-    Logger::log(Logger::Info, "ManagerAdaptor", "id=" + client->clientID());
-    Logger::log(Logger::Info, "ManagerAdaptor", "reqno=" + reqno);
+    qCDebug(lcResourceDaemonCoreLog) << "Sent grant() to client:"
+                    << client->objectPath()
+                    << "rtype=" << 5
+                    << "id=" << client->clientID()
+                    << "reqno=" << reqno;
 }
 
 void ManagerAdaptor::printDebug(const QDBusMessage& message)
 {
     if (message.arguments().count() < 3) {
-        Logger::log(Logger::Info, "ManagerAdaptor", "==== skip system message ===");
+        qCDebug(lcResourceDaemonCoreLog) << "==== skip system message ===";
         return;
     }
 
-    Logger::log(Logger::Info, "ManagerAdaptor", "==== got messsage ==========");
-    Logger::log(Logger::Info, "ManagerAdaptor", "Type   : " + message.arguments()[0].toInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "ID     : " + message.arguments()[1].toUInt());
-    Logger::log(Logger::Info, "ManagerAdaptor", "Req NO : " + message.arguments()[2].toUInt());
+    qCDebug(lcResourceDaemonCoreLog) << "==== got messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << "Type   : " << message.arguments()[0].toInt()
+                                     << "ID     : " << message.arguments()[1].toUInt()
+                                     << "Req NO : " << message.arguments()[2].toUInt();
 }
