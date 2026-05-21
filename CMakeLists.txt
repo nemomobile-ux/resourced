@@ -13,9 +13,14 @@ set(CMAKE_INSTALL_PREFIX /usr)
 
 include(GNUInstallDirs)
 
+enable_testing()
+
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS
     Core
     DBus)
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+
+install(FILES systemd/resourced.service DESTINATION /usr/lib/systemd/user)
