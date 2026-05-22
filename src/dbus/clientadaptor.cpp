@@ -70,31 +70,22 @@ bool ClientAdaptor::handleMessage(const QDBusMessage& message, const QDBusConnec
     printDebug(message);
 
     // ---- Method reply ----
-    QVariantList replyArgs;
-    replyArgs << 5
-              << (uint)clientId
-              << (uint)reqno
-              << (uint)1024;
-
-    QDBusMessage reply = message.createReply(replyArgs);
-    connection.send(reply);
-
-    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
-    qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
-    qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
-    qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
-
-    return true;
+    if (message.type() == QDBusMessage::MethodCallMessage) {
+        QDBusMessage reply = message.createReply();
+        connection.send(reply);
+        return true;
+    }
+    return false;
 }
 
 void ClientAdaptor::printDebug(const QDBusMessage& message)
 {
     if (message.arguments().count() < 3) {
-        qCDebug(lcResourceDaemonCoreLog) << "==== skip system message ===";
+        qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== skip system message ===";
         return;
     }
 
-    qCDebug(lcResourceDaemonCoreLog) << "==== got messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== got messsage ==========";
     qCDebug(lcResourceDaemonCoreLog) <<  "Type   : " << message.arguments()[0].toInt();
     qCDebug(lcResourceDaemonCoreLog) <<  "ID     : " << message.arguments()[1].toUInt();
     qCDebug(lcResourceDaemonCoreLog) <<  "Req NO : " << message.arguments()[2].toUInt();

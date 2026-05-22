@@ -39,8 +39,8 @@ ResourceClient* ResourceManager::createClient(const QDBusMessage& message, int p
 
     m_clients.append(client);
 
-    qCDebug(lcResourceDaemonCoreLog) << "Client created:" << message.service();
-    qCDebug(lcResourceDaemonCoreLog) << "priority:" << QString::number(priority);
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Client created:" << message.service();
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "priority:" << QString::number(priority);
 
     return client;
 }
@@ -50,11 +50,20 @@ void ResourceManager::destroyClient(ResourceClient* client)
     if (!client)
         return;
 
-    qCDebug(lcResourceDaemonCoreLog) << "Client destroyed" << client->objectPath();
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Client destroyed" << client->objectPath();
 
     releaseAll(client);
     m_clients.removeAll(client);
     client->deleteLater();
+}
+
+ResourceClient *ResourceManager::findClientById(uint id) const
+{
+    for (ResourceClient* client : m_clients) {
+        if (client->clientID() == id)
+            return client;
+    }
+    return nullptr;
 }
 
 void ResourceManager::requestResources(ResourceClient* client,
@@ -121,7 +130,7 @@ void ResourceManager::emitGranted(ResourceClient* client)
 
     QDBusConnection::systemBus().send(sig);
 
-    qCDebug(lcResourceDaemonCoreLog) << "Granted resource"
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Granted resource"
                     << "rtype=" << client->clientType()
                     << "id=" << client->clientID()
                     << "reqno=" << client->clientReqqno()
@@ -141,6 +150,37 @@ void ResourceManager::emitGranted(ResourceClient* client)
     QDBusConnection::systemBus().send(status);
 }
 
+void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
+{
+    // Safety checks
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "reevaluateClient: null client";
+        return;
+    }
+
+    uint requested = client->mandatory() | client->optional();
+    uint currentGranted = client->granted();
+
+    uint newGranted = requested;
+
+    if (newGranted == currentGranted) {
+        qCDebug(lcResourceDaemonCoreLog) << "reevaluateClient: no change for client"
+                                         << client->objectPath() << "granted stays" << newGranted;
+        return;
+    }
+
+    client->setGranted(newGranted);
+
+    client->syncResourcesFromMask(newGranted);
+    client->setGranted(newGranted);
+
+    emit grantResource(client, reqno, newGranted);
+
+    qCDebug(lcResourceDaemonCoreLog) << "reevaluateClient: client" << client->objectPath()
+                                     << "granted changed from" << currentGranted
+                                     << "to" << newGranted << "(reqno" << reqno << ")";
+}
+
 /* private */
 
 void ResourceManager::grant(ResourceClient* client,
@@ -149,16 +189,19 @@ void ResourceManager::grant(ResourceClient* client,
     m_resourceOwners.insert(resource, client);
     client->addResource(resource);
 
-    client->notifyGranted(resource);
+    uint mask = resourceMask(resource);
+    uint reqno = client->pendingReqno();
 
-    qCDebug(lcResourceDaemonCoreLog) << "Granted" + resource + " to " + client->objectPath();
+    emit grantResource(client, reqno, mask);
+
+    client->clearPendingReqno();
 }
 
 void ResourceManager::preempt(ResourceClient* oldClient,
     ResourceClient* newClient,
     const QString& resource)
 {
-    qCDebug(lcResourceDaemonCoreLog) <<  "Preempting" + resource + " from " + oldClient->objectPath() + " to " + newClient->objectPath();
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Preempting" + resource + " from " + oldClient->objectPath() + " to " + newClient->objectPath();
 
     oldClient->removeResource(resource);
     oldClient->notifyLost(resource);
@@ -166,4 +209,19 @@ void ResourceManager::preempt(ResourceClient* oldClient,
     m_resourceOwners.remove(resource);
 
     grant(newClient, resource);
+}
+
+uint ResourceManager::resourceMask(const QString &resource)
+{
+    if (resource == "AudioPlayback")  return 1 << 0; // 1
+    if (resource == "VideoPlayback")  return 1 << 1; // 2
+    if (resource == "AudioCapture")   return 1 << 2; // 4
+    if (resource == "Alarm")          return 1 << 3; // 8
+    if (resource == "VoiceCall")      return 1 << 4; // 16
+    if (resource == "HardwareKeys")   return 1 << 5; // 32
+    if (resource == "TouchInput")     return 1 << 6; // 64
+    if (resource == "Location")       return 1 << 7; // 128
+    if (resource == "Network")        return 1 << 8; // 256
+    if (resource == "Display")        return 1 << 9; // 512
+    return 0;
 }

@@ -22,7 +22,7 @@
 ResourceClient::ResourceClient(
     QObject* parent)
     : QObject(parent)
-    , m_clientID(-1)
+    , m_clientID(0)
     , m_clientReqqno(0)
 {
 }
@@ -107,4 +107,19 @@ void ResourceClient::setServiceName(const QString& newServiceName)
         return;
     m_serviceName = newServiceName;
     emit serviceNameChanged();
+}
+
+void ResourceClient::syncResourcesFromMask(uint mask)
+{
+    m_resources.clear();
+    if (mask & 1)   m_resources << "AudioPlayback";
+    if (mask & 2)   m_resources << "VideoPlayback";
+    if (mask & 4)   m_resources << "AudioCapture";
+    if (mask & 8)   m_resources << "Alarm";
+    if (mask & 16)  m_resources << "VoiceCall";
+    if (mask & 32)  m_resources << "HardwareKeys";
+    if (mask & 64)  m_resources << "TouchInput";
+    if (mask & 128) m_resources << "Location";
+    if (mask & 256) m_resources << "Network";
+    if (mask & 512) m_resources << "Display";
 }

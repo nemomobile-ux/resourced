@@ -52,6 +52,16 @@ private:
     uint m_clientsCount;
 
     void printDebug(const QDBusMessage& message);
+
+    void handleAcquire(const QDBusMessage &message, const QDBusConnection &connection);
+    void handleRelease(const QDBusMessage &message, const QDBusConnection &connection);
+    void handleUnregister(const QDBusMessage &message, const QDBusConnection &connection);
+    void handleUpdate(const QDBusMessage &message, const QDBusConnection &connection);
+    void handleAudio(const QDBusMessage &message, const QDBusConnection &connection);
+    void handleVideo(const QDBusMessage &message, const QDBusConnection &connection);
+
+    void sendGrant(ResourceClient *client, uint reqno, uint grantedMask);
+    void sendAdvice(ResourceClient *client, uint reqno, uint adviceMask);
 };
 
 #endif // MANAGERADAPTOR_H

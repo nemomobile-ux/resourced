@@ -33,6 +33,10 @@ ManagerAdaptor::ManagerAdaptor(ResourceManager* parent)
     : QDBusVirtualObject(parent)
     , m_clientsCount(0)
 {
+    connect(parent, &ResourceManager::grantResource,
+        this, &ManagerAdaptor::sendGrant);
+    connect(parent, &ResourceManager::adviceResource,
+        this, &ManagerAdaptor::sendAdvice);
 }
 
 ManagerAdaptor::~ManagerAdaptor()
@@ -100,7 +104,8 @@ QString ManagerAdaptor::introspect(const QString& path) const
 </interface>)";
 }
 
-bool ManagerAdaptor::handleMessage(const QDBusMessage& message, const QDBusConnection& connection)
+bool ManagerAdaptor::handleMessage(const QDBusMessage& message
+    , const QDBusConnection& connection)
 {
     QString member = message.member();
     QString interface = message.interface();
@@ -115,20 +120,41 @@ bool ManagerAdaptor::handleMessage(const QDBusMessage& message, const QDBusConne
     if (message.interface() != "org.maemo.resource.manager")
         return false;
 
-    printDebug(message);
-
-    if (message.member() == "register") {
+    if (member == QLatin1String("register")) {
         registerClient(message, connection);
         return true;
     }
-    if (message.member() == "unregister") {
+
+    if (member == QLatin1String("acquire")) {
+        handleAcquire(message, connection);
         return true;
     }
 
-    if (message.member() == "acquire") {
-        acquireClient(message, connection);
+    if (member == QLatin1String("release")) {
+        handleRelease(message, connection);
         return true;
     }
+
+    if (member == QLatin1String("unregister")) {
+        handleUnregister(message, connection);
+        return true;
+    }
+
+    if (member == QLatin1String("update")) {
+        handleUpdate(message, connection);
+        return true;
+    }
+
+    if (member == QLatin1String("audio")) {
+        handleAudio(message, connection);
+        return true;
+    }
+
+    if (member == QLatin1String("video")) {
+        handleVideo(message, connection);
+        return true;
+    }
+
     return false;
 }
 
@@ -178,7 +204,7 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
             clientAdaptor);
 
         if (!ok) {
-            qCWarning(lcResourceDaemonCoreLog) << "Cannot register client object" + path;
+            qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Cannot register client object" + path;
             replyArgs << 0 << 0 << 0 << -1 << "Cannot register client object";
         } else {
             replyArgs << (int)9
@@ -189,13 +215,13 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
         }
     }
 
-    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== send messsage ==========";
     qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
     qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
     qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     QDBusMessage reply = message.createReply(replyArgs);
-    connection.call(reply);
+    connection.send(reply);
 }
 
 /**
@@ -213,18 +239,18 @@ void ManagerAdaptor::unregisterClient(const QDBusObjectPath& path)
     }
 
     if (!client) {
-        qCWarning(lcResourceDaemonCoreLog) <<  "unregisterClient: no such client" + path.path();
+        qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO <<  "unregisterClient: no such client" + path.path();
         return;
     }
 
     // Only the owner can unregister
     if (parent()->getMessage().service() != client->objectPath()) {
-        qCWarning(lcResourceDaemonCoreLog) <<  "unregisterClient denied for sender" + parent()->getMessage().service();
+        qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO <<  "unregisterClient denied for sender" + parent()->getMessage().service();
         return;
     }
 
     parent()->destroyClient(client);
-    qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" + path.path();
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Client unregistered:" + path.path();
 }
 
 void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConnection& connection)
@@ -242,7 +268,7 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
         }
     }
     if (!client) {
-        qCDebug(lcResourceDaemonCoreLog) << "acquireClient: client not found:" << rsetId;
+        qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "acquireClient: client not found:" << rsetId;
         return;
     }
 
@@ -255,17 +281,17 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
 
     QDBusMessage reply = message.createReply(replyArgs);
 
-    qCDebug(lcResourceDaemonCoreLog) << "==== send messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== send messsage ==========";
     qCDebug(lcResourceDaemonCoreLog) << "Type   : " << replyArgs[0].toInt();
     qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
     qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     connection.send(reply);
 
-    qCDebug(lcResourceDaemonCoreLog) << "ACQUIRE completed for client" + client->objectPath();
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "ACQUIRE completed for client" + client->objectPath();
 
     if (client->serviceName().isEmpty()) {
-        qCWarning(lcResourceDaemonCoreLog) << "Client serviceName is empty, cannot call grant()";
+        qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Client serviceName is empty, cannot call grant()";
         return;
     }
 
@@ -282,7 +308,7 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
           << (uint)1024; // обычно mask/share
 
     connection.send(grant);
-    qCDebug(lcResourceDaemonCoreLog) << "Sent grant() to client:"
+    qCDebug(lcResourceDaemonCoreLog)  << Q_FUNC_INFO << "Sent grant() to client:"
                     << client->objectPath()
                     << "rtype=" << 5
                     << "id=" << client->clientID()
@@ -292,12 +318,209 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
 void ManagerAdaptor::printDebug(const QDBusMessage& message)
 {
     if (message.arguments().count() < 3) {
-        qCDebug(lcResourceDaemonCoreLog) << "==== skip system message ===";
+        qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== skip system message ===";
         return;
     }
 
-    qCDebug(lcResourceDaemonCoreLog) << "==== got messsage ==========";
+    qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== got messsage ==========";
     qCDebug(lcResourceDaemonCoreLog) << "Type   : " << message.arguments()[0].toInt()
                                      << "ID     : " << message.arguments()[1].toUInt()
                                      << "Req NO : " << message.arguments()[2].toUInt();
+}
+
+void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    if (args.size() < 3) {
+        qCWarning(lcResourceDaemonCoreLog) << "acquire: wrong argument count";
+        return;
+    }
+    const int rtype = args[0].toInt();
+    const uint clientId = args[1].toUInt();
+    const uint reqno = args[2].toUInt();
+
+           // Найти клиента по ID
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "acquire: client not found" << clientId;
+        return;
+    }
+
+    client->setPendingReqno(reqno);
+    parent()->requestResources(client, client->resources());
+}
+
+void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    if (args.size() < 3) {
+        qCWarning(lcResourceDaemonCoreLog) << "release: wrong argument count";
+        return;
+    }
+    int rtype = args[0].toInt();
+    uint clientId = args[1].toUInt();
+    uint reqno = args[2].toUInt();
+
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "release: client not found" << clientId;
+        return;
+    }
+
+    parent()->releaseAll(client);
+    emit parent()->clientReleased(client);
+
+    qCDebug(lcResourceDaemonCoreLog) << "Resources released for client" << client->objectPath();
+}
+
+void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    if (args.size() < 3) {
+        qCWarning(lcResourceDaemonCoreLog) << "unregister: wrong argument count";
+        return;
+    }
+    int rtype = args[0].toInt();
+    uint clientId = args[1].toUInt();
+    uint reqno = args[2].toUInt();
+
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "unregister: client not found" << clientId;
+        return;
+    }
+
+    parent()->releaseAll(client);
+    parent()->destroyClient(client);
+
+    qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" << client->objectPath();
+}
+
+void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    if (args.size() < 10) {
+        qCWarning(lcResourceDaemonCoreLog) << "update: wrong argument count" << args.size();
+        return;
+    }
+    int rtype = args[0].toInt();
+    uint clientId = args[1].toUInt();
+    uint reqno = args[2].toUInt();
+    uint mandatory = args[3].toUInt();
+    uint optional = args[4].toUInt();
+    uint share = args[5].toUInt();
+    uint mask = args[6].toUInt();
+    QString klass = args[7].toString();
+    QString mode = args[8].toString();
+    uint priority = args[9].toUInt();
+
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "update: client not found" << clientId;
+        return;
+    }
+
+    client->setMandatory(mandatory);
+    client->setOptional(optional);
+    client->setShare(share);
+    client->setMask(mask);
+    client->setKlass(klass);
+    client->setMode(mode);
+    client->setPriority(priority);
+
+    parent()->reevaluateClient(client, reqno);
+
+    qCDebug(lcResourceDaemonCoreLog) << "Client updated:" << client->objectPath() << "new mandatory:" << mandatory;
+}
+
+void ManagerAdaptor::handleAudio(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    // Ожидаемая сигнатура: (i, u, u, s, s, s, s, s)
+    if (args.size() < 8) {
+        qCWarning(lcResourceDaemonCoreLog) << "audio: wrong argument count";
+        return;
+    }
+    int rtype = args[0].toInt();
+    uint clientId = args[1].toUInt();
+    uint reqno = args[2].toUInt();
+    QString group = args[3].toString();
+    QString appId = args[4].toString();
+    QString property = args[5].toString();
+    QString method = args[6].toString();   // match method, например "prefix", "regex"
+    QString pattern = args[7].toString();
+
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "audio: client not found" << clientId;
+        return;
+    }
+
+    client->setAudioSpec(group, appId, property, method, pattern);
+
+    emit parent()->audioSpecChanged(client);
+
+    qCDebug(lcResourceDaemonCoreLog) << "Audio spec updated for client" << client->objectPath();
+}
+
+void ManagerAdaptor::handleVideo(const QDBusMessage &message, const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+    const QList<QVariant> args = message.arguments();
+    if (args.size() < 4) {
+        qCWarning(lcResourceDaemonCoreLog) << "video: wrong argument count";
+        return;
+    }
+    int rtype = args[0].toInt();
+    uint clientId = args[1].toUInt();
+    uint reqno = args[2].toUInt();
+    uint pid = args[3].toUInt();
+
+    ResourceClient *client = parent()->findClientById(clientId);
+    if (!client) {
+        qCWarning(lcResourceDaemonCoreLog) << "video: client not found" << clientId;
+        return;
+    }
+
+    client->setVideoPid(pid);
+    emit parent()->videoSpecChanged(client);
+
+    qCDebug(lcResourceDaemonCoreLog) << "Video spec updated for client" << client->objectPath() << "pid:" << pid;
+}
+
+void ManagerAdaptor::sendGrant(ResourceClient *client, uint reqno, uint grantedMask)
+{
+    if (!client || client->serviceName().isEmpty())
+        return;
+
+    QDBusMessage grantCall = QDBusMessage::createMethodCall(
+        client->serviceName(),
+        client->objectPath(),
+        "org.maemo.resource.client",
+        "grant"
+        );
+    grantCall << (int)9 << client->clientID() << reqno << grantedMask;
+
+    QDBusConnection::systemBus().asyncCall(grantCall);
+    qCDebug(lcResourceDaemonCoreLog) << "Sent grant to" << client->objectPath() << "reqno" << reqno << "mask" << grantedMask;
+}
+
+void ManagerAdaptor::sendAdvice(ResourceClient *client, uint reqno, uint adviceMask)
+{
+    if (!client || client->serviceName().isEmpty())
+        return;
+
+    QDBusMessage adviceCall = QDBusMessage::createMethodCall(
+        client->serviceName(),
+        client->objectPath(),
+        "org.maemo.resource.client",
+        "advice"
+        );
+    adviceCall << (int)9 << client->clientID() << reqno << adviceMask;
+    QDBusConnection::systemBus().asyncCall(adviceCall);
 }

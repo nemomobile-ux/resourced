@@ -45,6 +45,7 @@ public:
     ResourceClient* createClient(const QDBusMessage& message,
         int priority);
     void destroyClient(ResourceClient* client);
+    ResourceClient* findClientById(uint id) const;
 
     QList<ResourceClient*> clients() const { return m_clients; }
 
@@ -58,8 +59,16 @@ public:
         const ResourceClient* client) const;
 
     void emitGranted(ResourceClient* client);
+    void reevaluateClient(ResourceClient* client, uint reqno);
 
     QDBusMessage getMessage() { return message(); }
+
+signals:
+    void grantResource(ResourceClient* client, uint reqno, uint mask);
+    void adviceResource(ResourceClient* client, uint reqno, uint mask);
+    void clientReleased(ResourceClient* client);
+    void audioSpecChanged(ResourceClient* client);
+    void videoSpecChanged(ResourceClient* client);
 
 private:
     void grant(ResourceClient* client,
@@ -68,7 +77,6 @@ private:
         ResourceClient* newClient,
         const QString& resource);
 
-private:
     // resource → owner
     QMap<QString, ResourceClient*> m_resourceOwners;
 
@@ -77,6 +85,8 @@ private:
 
     SecurityPolicy* m_security;
     PriorityPolicy* m_priority;
+
+    uint resourceMask(const QString& resource);
 };
 
 #endif // RESOURCEMANAGER_H

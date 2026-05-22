@@ -71,6 +71,41 @@ public:
     QString serviceName() const;
     void setServiceName(const QString& newServiceName);
 
+    uint pendingReqno() const { return m_pendingReqno; }
+    void setPendingReqno(uint reqno) { m_pendingReqno = reqno; }
+    void clearPendingReqno() { m_pendingReqno = 0; }
+    bool hasPendingRequest() const { return m_pendingReqno != 0; }
+
+    /*For update*/
+    uint mandatory() const { return m_mandatory; }
+    void setMandatory(uint m) { m_mandatory = m; }
+    uint optional() const { return m_optional; }
+    void setOptional(uint o) { m_optional = o; }
+    uint share() const { return m_share; }
+    void setShare(uint s) { m_share = s; }
+    uint mask() const { return m_mask; }
+    void setMask(uint m) { m_mask = m; }
+    QString klass() const { return m_klass; }
+    void setKlass(const QString& k) { m_klass = k; }
+    QString mode() const { return m_mode; }
+    void setMode(const QString& m) { m_mode = m; }
+
+    uint granted() const { return m_granted; }
+    void setGranted(uint g) { m_granted = g; }
+
+    /*For audio*/
+    void setAudioSpec(const QString& group, const QString& appId, const QString& property,
+        const QString& method, const QString& pattern) {
+        m_audioGroup = group; m_audioAppId = appId; m_audioProperty = property;
+        m_audioMethod = method; m_audioPattern = pattern;
+    }
+
+    /*For video*/
+
+    void setVideoPid(uint pid) { m_videoPid = pid; }
+
+    void syncResourcesFromMask(uint mask);
+
 signals:
     void notify(const QString& event,
         const QString& resource);
@@ -86,12 +121,19 @@ signals:
 
 private:
     int m_priority;
+    uint m_pendingReqno = 0;
     QStringList m_resources;
     QString m_objectPath;
     int m_clientType;
     uint m_clientID;
     uint m_clientReqqno;
     QString m_serviceName;
+
+    uint m_mandatory = 0, m_optional = 0, m_share = 0, m_mask = 0;
+    QString m_klass, m_mode;
+    QString m_audioGroup, m_audioAppId, m_audioProperty, m_audioMethod, m_audioPattern;
+    uint m_videoPid = 0;
+    uint m_granted = 0;
 };
 
 #endif // RESOURCECLIENT_H
