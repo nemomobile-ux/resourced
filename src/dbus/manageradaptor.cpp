@@ -529,8 +529,13 @@ void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusCo
         return;
     }
 
+    QString path = client->objectPath();
+
     parent()->releaseAll(client);
+    QDBusConnection::systemBus().unregisterObject(path);
     parent()->destroyClient(client);
+
+    emit ClientUnregistered(QDBusObjectPath(path));
 
     QVariantList replyArgs;
     replyArgs << (int)9
@@ -542,7 +547,7 @@ void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusCo
     if (incomingSerial(message) != 0)
         connection.send(reply);
 
-    qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" << client->objectPath();
+    qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" << path;
 }
 
 void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnection &connection)
@@ -725,8 +730,11 @@ void ManagerAdaptor::nameOwnerChanged(const QString& name, const QString& oldOwn
     }
 
     for (ResourceClient* client : toDestroy) {
+        QString path = client->objectPath();
         parent()->releaseAll(client);
+        QDBusConnection::systemBus().unregisterObject(path);
         parent()->destroyClient(client);
+        emit ClientUnregistered(QDBusObjectPath(path));
     }
 }
 
