@@ -94,6 +94,8 @@ void ResourceManager::requestResources(ResourceClient* client,
             client->notifyDenied(res);
         }
     }
+
+    client->clearPendingReqno();
 }
 
 void ResourceManager::releaseAll(ResourceClient* client)
@@ -194,8 +196,6 @@ void ResourceManager::grant(ResourceClient* client,
     uint reqno = client->pendingReqno();
 
     emit grantResource(client, reqno, mask);
-
-    client->clearPendingReqno();
 }
 
 void ResourceManager::preempt(ResourceClient* oldClient,
