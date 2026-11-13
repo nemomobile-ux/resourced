@@ -506,7 +506,6 @@ void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnec
 
 void ManagerAdaptor::handleAudio(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     // Ожидаемая сигнатура: (i, u, u, s, s, s, s, s)
     if (args.size() < 8) {
@@ -532,12 +531,21 @@ void ManagerAdaptor::handleAudio(const QDBusMessage &message, const QDBusConnect
 
     emit parent()->audioSpecChanged(client);
 
+    QVariantList replyArgs;
+    replyArgs << (int)9
+              << (uint)client->clientID()
+              << (uint)reqno
+              << (uint)0
+              << QStringLiteral("OK");
+    QDBusMessage reply = message.createReply(replyArgs);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
+
     qCDebug(lcResourceDaemonCoreLog) << "Audio spec updated for client" << client->objectPath();
 }
 
 void ManagerAdaptor::handleVideo(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     if (args.size() < 4) {
         qCWarning(lcResourceDaemonCoreLog) << "video: wrong argument count";
@@ -556,6 +564,16 @@ void ManagerAdaptor::handleVideo(const QDBusMessage &message, const QDBusConnect
 
     client->setVideoPid(pid);
     emit parent()->videoSpecChanged(client);
+
+    QVariantList replyArgs;
+    replyArgs << (int)9
+              << (uint)client->clientID()
+              << (uint)reqno
+              << (uint)0
+              << QStringLiteral("OK");
+    QDBusMessage reply = message.createReply(replyArgs);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
 
     qCDebug(lcResourceDaemonCoreLog) << "Video spec updated for client" << client->objectPath() << "pid:" << pid;
 }
