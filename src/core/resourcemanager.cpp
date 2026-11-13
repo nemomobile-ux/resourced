@@ -106,8 +106,11 @@ void ResourceManager::releaseAll(ResourceClient* client)
     const auto resources = client->resources();
 
     for (const QString& res : resources) {
-        m_resourceOwners.remove(res);
+        if (isOwner(res, client))
+            m_resourceOwners.remove(res);
+
         client->removeResource(res);
+        client->notifyLost(res);
     }
 }
 
