@@ -560,6 +560,11 @@ void ManagerAdaptor::handleAudio(const QDBusMessage &message, const QDBusConnect
     // Ожидаемая сигнатура: (i, u, u, s, s, s, s, s)
     if (args.size() < 8) {
         qCWarning(lcResourceDaemonCoreLog) << "audio: wrong argument count";
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     int rtype = args[0].toInt();
@@ -574,6 +579,11 @@ void ManagerAdaptor::handleAudio(const QDBusMessage &message, const QDBusConnect
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "audio: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
@@ -599,6 +609,11 @@ void ManagerAdaptor::handleVideo(const QDBusMessage &message, const QDBusConnect
     const QList<QVariant> args = message.arguments();
     if (args.size() < 4) {
         qCWarning(lcResourceDaemonCoreLog) << "video: wrong argument count";
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     int rtype = args[0].toInt();
@@ -609,6 +624,11 @@ void ManagerAdaptor::handleVideo(const QDBusMessage &message, const QDBusConnect
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "video: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
