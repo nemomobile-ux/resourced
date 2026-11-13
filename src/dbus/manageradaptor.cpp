@@ -91,7 +91,7 @@ QString ManagerAdaptor::introspect(const QString& path) const
         <arg type="i" direction="out"/>  <!-- error -->
         <arg type="s" direction="out"/>  <!-- message -->
     </method>
-    <method name=acquire">
+    <method name="acquire">
         <arg type="i" direction="in"/>
         <arg type="u" direction="in"/>
         <arg type="u" direction="in"/>
@@ -112,7 +112,7 @@ QString ManagerAdaptor::introspect(const QString& path) const
         <arg type="i" direction="out"/>  <!-- error -->
         <arg type="s" direction="out"/>  <!-- message -->
     </method>
-    <method name=release">
+    <method name="release">
         <arg type="i" direction="in"/>
         <arg type="u" direction="in"/>
         <arg type="u" direction="in"/>
@@ -121,6 +121,49 @@ QString ManagerAdaptor::introspect(const QString& path) const
         <arg type="u" direction="out"/>  <!-- reqno_out -->
         <arg type="i" direction="out"/>  <!-- error -->
         <arg type="s" direction="out"/>  <!-- message -->
+    </method>
+    <method name="update">
+        <arg type="i" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="i" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="i" direction="out"/>
+        <arg type="s" direction="out"/>
+    </method>
+    <method name="audio">
+        <arg type="i" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="i" direction="in"/>
+        <arg type="s" direction="in"/>
+        <arg type="i" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="i" direction="out"/>
+        <arg type="s" direction="out"/>
+    </method>
+    <method name="video">
+        <arg type="i" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="u" direction="in"/>
+        <arg type="i" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="u" direction="out"/>
+        <arg type="i" direction="out"/>
+        <arg type="s" direction="out"/>
     </method>
 </interface>)";
 }
