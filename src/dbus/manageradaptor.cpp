@@ -36,13 +36,19 @@ static bool isSenderAllowed(const QString& sender, ResourceManager* manager)
     if (manager->isAllowedSender(sender))
         return true;
 
+    // Allow direct system-bus clients identified by unique connection names.
+    // Their well-known service names may not be registered yet.
+    if (sender.startsWith(QLatin1Char(':')))
+        return true;
+
     QDBusConnectionInterface* iface = QDBusConnection::systemBus().interface();
     if (!iface)
         return false;
 
     const QStringList services = iface->registeredServiceNames();
     for (const QString& service : services) {
-        if (iface->serviceOwner(service).value() == sender && manager->isAllowedSender(service))
+        QString owner = iface->serviceOwner(service).value();
+        if (owner == sender && manager->isAllowedSender(service))
             return true;
     }
 
