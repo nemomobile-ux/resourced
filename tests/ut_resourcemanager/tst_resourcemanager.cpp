@@ -90,4 +90,40 @@ void tst_ResourceManager::testGrantSignal()
     QCOMPARE(args[2].toUInt(), 1u); // mask
 }
 
+void tst_ResourceManager::testSharedResource()
+{
+    ResourceClient clientA, clientB;
+    clientA.setPriority(10);
+    clientB.setPriority(10);
+    clientA.setShare(1);
+    clientA.setMask(1);
+    clientB.setShare(1);
+    clientB.setMask(1);
+
+    m_mgr->requestResources(&clientA, QStringList() << "AudioPlayback");
+    m_mgr->requestResources(&clientB, QStringList() << "AudioPlayback");
+
+    QVERIFY(clientA.hasResource("AudioPlayback"));
+    QVERIFY(clientB.hasResource("AudioPlayback"));
+    QVERIFY(m_mgr->isOwner("AudioPlayback", &clientA));
+    QVERIFY(m_mgr->isOwner("AudioPlayback", &clientB));
+}
+
+void tst_ResourceManager::testReevaluateRevoked()
+{
+    m_clientLow->setMandatory(1);
+    m_clientLow->setOptional(2);
+    m_mgr->requestResources(m_clientLow, QStringList() << "AudioPlayback" << "VideoPlayback");
+    QVERIFY(m_clientLow->hasResource("AudioPlayback"));
+    QVERIFY(m_clientLow->hasResource("VideoPlayback"));
+
+    m_clientLow->setMandatory(1);
+    m_clientLow->setOptional(0);
+    m_mgr->reevaluateClient(m_clientLow, 200);
+
+    QVERIFY(m_clientLow->hasResource("AudioPlayback"));
+    QVERIFY(!m_clientLow->hasResource("VideoPlayback"));
+    QCOMPARE(m_clientLow->granted(), 1u);
+}
+
 QTEST_APPLESS_MAIN(tst_ResourceManager)

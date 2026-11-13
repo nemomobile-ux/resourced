@@ -135,4 +135,16 @@ void tst_ManagerAdaptor::testUpdateMessage()
     QCOMPARE(client->priority(), 100u);
 }
 
+void tst_ManagerAdaptor::testSecurityDenied()
+{
+    QDBusMessage msg = QDBusMessage::createMethodCall(
+        "evil.service", "/org/maemo/resource/manager",
+        "org.maemo.resource.manager", "register");
+    msg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
+
+    bool handled = m_adaptor->handleMessage(msg, QDBusConnection::sessionBus());
+    QVERIFY(handled);
+    QCOMPARE(m_mgr->clients().size(), 0);
+}
+
 QTEST_APPLESS_MAIN(tst_ManagerAdaptor)

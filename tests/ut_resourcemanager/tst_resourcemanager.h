@@ -18,6 +18,8 @@ private slots:
     void testReleaseResources();
     void testReevaluateClient();
     void testGrantSignal();
+    void testSharedResource();
+    void testReevaluateRevoked();
 
 private:
     ResourceManager *m_mgr;
