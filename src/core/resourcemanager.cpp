@@ -54,6 +54,7 @@ void ResourceManager::destroyClient(ResourceClient* client)
     qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Client destroyed" << client->objectPath();
 
     releaseAll(client);
+    QDBusConnection::systemBus().unregisterObject(client->objectPath());
     m_clients.removeAll(client);
     client->deleteLater();
 }
