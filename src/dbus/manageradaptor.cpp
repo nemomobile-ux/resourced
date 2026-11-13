@@ -207,11 +207,13 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
         const QString mode = args[8].toString();
         const uint priority = args[9].toUInt();
 
+        uint validShare = share & mask;
+
         client = parent()->createClient(message, priority);
         client->setClientType(type);
         client->setMandatory(mandatory);
         client->setOptional(optional);
-        client->setShare(share);
+        client->setShare(validShare);
         client->setMask(mask);
         client->setKlass(klass);
         client->setMode(mode);
@@ -491,7 +493,7 @@ void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnec
 
     client->setMandatory(mandatory);
     client->setOptional(optional);
-    client->setShare(share);
+    client->setShare(share & mask);
     client->setMask(mask);
     client->setKlass(klass);
     client->setMode(mode);
