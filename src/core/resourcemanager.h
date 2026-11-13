@@ -60,6 +60,12 @@ public:
 
     bool isAllowedSender(const QString& sender) const;
 
+    void setAllowedSenders(const QStringList& senders);
+    void setPreemptionEnabled(bool enabled);
+
+    int defaultClientPriority() const { return m_defaultClientPriority; }
+    void setDefaultClientPriority(int priority) { m_defaultClientPriority = priority; }
+
     void emitGranted(ResourceClient* client);
     void reevaluateClient(ResourceClient* client, uint reqno);
 
@@ -87,6 +93,8 @@ private:
 
     SecurityPolicy* m_security;
     PriorityPolicy* m_priority;
+
+    int m_defaultClientPriority = 10;
 
     uint resourceMask(const QString& resource);
 };

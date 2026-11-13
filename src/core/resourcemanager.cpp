@@ -160,6 +160,16 @@ bool ResourceManager::isAllowedSender(const QString& sender) const
     return m_security->isAllowedSender(sender);
 }
 
+void ResourceManager::setAllowedSenders(const QStringList& senders)
+{
+    m_security->setAllowedSenders(senders);
+}
+
+void ResourceManager::setPreemptionEnabled(bool enabled)
+{
+    m_priority->setPreemptionEnabled(enabled);
+}
+
 void ResourceManager::emitGranted(ResourceClient* client)
 {
     QDBusMessage sig = QDBusMessage::createSignal(

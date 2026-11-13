@@ -26,6 +26,14 @@ SecurityPolicy::SecurityPolicy(QObject* parent)
     m_whitelist << "org.nemomobile";
 }
 
+void SecurityPolicy::setAllowedSenders(const QStringList& senders)
+{
+    if (senders.isEmpty())
+        return;
+
+    m_whitelist = senders;
+}
+
 bool SecurityPolicy::isAllowedSender(const QString& sender) const
 {
     // Allow only whitelisted system services

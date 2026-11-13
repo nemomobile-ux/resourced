@@ -35,6 +35,8 @@ public:
      */
     bool isAllowedSender(const QString& sender) const;
 
+    void setAllowedSenders(const QStringList& senders);
+
 private:
     QStringList m_whitelist;
 };

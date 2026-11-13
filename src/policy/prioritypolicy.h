@@ -36,6 +36,11 @@ public:
     bool canPreempt(ResourceClient* newClient,
         ResourceClient* currentOwner,
         const QString& resource) const;
+
+    void setPreemptionEnabled(bool enabled);
+
+private:
+    bool m_preemptionEnabled = true;
 };
 
 #endif // PRIORITYPOLICY_H

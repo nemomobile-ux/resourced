@@ -24,3 +24,4 @@ add_subdirectory(tests)
 
 
 install(FILES systemd/resourced.service DESTINATION /usr/lib/systemd/user)
+install(FILES config/resourced.conf DESTINATION /etc)

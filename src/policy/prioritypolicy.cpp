@@ -25,10 +25,18 @@ PriorityPolicy::PriorityPolicy(QObject* parent)
 {
 }
 
+void PriorityPolicy::setPreemptionEnabled(bool enabled)
+{
+    m_preemptionEnabled = enabled;
+}
+
 bool PriorityPolicy::canPreempt(ResourceClient* newClient,
     ResourceClient* currentOwner,
     const QString& resource) const
 {
+    if (!m_preemptionEnabled)
+        return false;
+
     if (!newClient || !currentOwner)
         return false;
 

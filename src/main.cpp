@@ -19,10 +19,29 @@
 
 #include <QCoreApplication>
 #include <QDBusConnection>
+#include <QFileInfo>
+#include <QRegularExpression>
+#include <QSettings>
 
 #include "core/resourcemanager.h"
 #include "dbus/manageradaptor.h"
 #include "util/logger.h"
+
+static QString findConfigFile()
+{
+    const QStringList candidates = {
+        QStringLiteral("/etc/resourced.conf"),
+        QStringLiteral("/etc/resourced/resourced.conf"),
+        QStringLiteral("/usr/share/resourced/resourced.conf")
+    };
+
+    for (const QString& path : candidates) {
+        if (QFileInfo::exists(path))
+            return path;
+    }
+
+    return QString();
+}
 
 int main(int argc, char* argv[])
 {
@@ -44,6 +63,30 @@ int main(int argc, char* argv[])
 
     // Core manager
     ResourceManager* manager = new ResourceManager();
+
+    QString configFile = findConfigFile();
+    if (!configFile.isEmpty()) {
+        QSettings settings(configFile, QSettings::IniFormat);
+        settings.beginGroup("Security");
+        QString allowed = settings.value("AllowedSenders", "org.nemomobile").toString();
+        QStringList senders;
+        for (const QString& part : allowed.split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts))
+            senders << part.trimmed();
+        if (!senders.isEmpty())
+            manager->setAllowedSenders(senders);
+        settings.endGroup();
+
+        settings.beginGroup("Preemption");
+        bool preemption = settings.value("EnablePreemption", true).toBool();
+        manager->setPreemptionEnabled(preemption);
+        settings.endGroup();
+
+        settings.beginGroup("General");
+        int defaultPriority = settings.value("DefaultClientPriority", 10).toInt();
+        manager->setDefaultClientPriority(defaultPriority);
+        settings.endGroup();
+    }
+
     ManagerAdaptor adaptor(manager);
 
     if (!bus.registerVirtualObject(

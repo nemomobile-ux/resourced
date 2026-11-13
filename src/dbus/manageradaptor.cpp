@@ -248,7 +248,9 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
         const uint mask = args[6].toUInt();
         const QString klass = args[7].toString();
         const QString mode = args[8].toString();
-        const uint priority = args[9].toUInt();
+        uint priority = args[9].toUInt();
+        if (priority == 0)
+            priority = parent()->defaultClientPriority();
 
         uint validShare = share & mask;
 
