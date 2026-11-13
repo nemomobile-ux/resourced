@@ -120,6 +120,11 @@ bool ResourceManager::isOwner(const QString& resource,
     return m_resourceOwners.value(resource) == client;
 }
 
+bool ResourceManager::isAllowedSender(const QString& sender) const
+{
+    return m_security->isAllowedSender(sender);
+}
+
 void ResourceManager::emitGranted(ResourceClient* client)
 {
     QDBusMessage sig = QDBusMessage::createSignal(

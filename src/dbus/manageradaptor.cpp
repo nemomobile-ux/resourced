@@ -185,7 +185,7 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
     if (args.size() != 10) {
         qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Wrong arguments";
         replyArgs << 0 << 0 << 0 << -1 << "Invalid argument count";
-    } else {
+    } else if (parent()->isAllowedSender(message.service())) {
 
         // ---- Parse arguments ----
         const int type = args[0].toInt();
@@ -233,6 +233,9 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
                       << (uint)0
                       << QStringLiteral("OK");
         }
+    } else {
+        qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Sender not allowed:" << message.service();
+        replyArgs << 0 << 0 << 0 << -1 << "Sender not allowed";
     }
 
     qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "==== send messsage ==========";

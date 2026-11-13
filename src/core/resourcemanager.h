@@ -58,6 +58,8 @@ public:
     bool isOwner(const QString& resource,
         const ResourceClient* client) const;
 
+    bool isAllowedSender(const QString& sender) const;
+
     void emitGranted(ResourceClient* client);
     void reevaluateClient(ResourceClient* client, uint reqno);
 

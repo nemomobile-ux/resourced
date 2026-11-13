@@ -21,7 +21,7 @@ void tst_ManagerAdaptor::cleanup()
 void tst_ManagerAdaptor::testRegisterMessage()
 {
     QDBusMessage msg = QDBusMessage::createMethodCall(
-        "test.service", "/org/maemo/resource/manager",
+        "org.nemomobile.test", "/org/maemo/resource/manager",
         "org.maemo.resource.manager", "register");
     // type, id, reqno, mandatory, optional, share, mask, class, mode, priority
     msg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
@@ -32,7 +32,7 @@ void tst_ManagerAdaptor::testRegisterMessage()
 
     ResourceClient *client = m_mgr->clients().first();
     QCOMPARE(client->priority(), 50);
-    QCOMPARE(client->serviceName(), QString("test.service"));
+    QCOMPARE(client->serviceName(), QString("org.nemomobile.test"));
     QCOMPARE(client->mandatory(), 4u);
     QCOMPARE(client->optional(), 2u);
 }
@@ -41,7 +41,7 @@ void tst_ManagerAdaptor::testAcquireMessage()
 {
     // Register first
     QDBusMessage regMsg = QDBusMessage::createMethodCall(
-        "test.service", "/org/maemo/resource/manager",
+        "org.nemomobile.test", "/org/maemo/resource/manager",
         "org.maemo.resource.manager", "register");
     regMsg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
     m_adaptor->handleMessage(regMsg, QDBusConnection::sessionBus());
@@ -64,7 +64,7 @@ void tst_ManagerAdaptor::testUnregisterMessage()
 {
     // Register
     QDBusMessage regMsg = QDBusMessage::createMethodCall(
-        "test.service", "/org/maemo/resource/manager",
+        "org.nemomobile.test", "/org/maemo/resource/manager",
         "org.maemo.resource.manager", "register");
     regMsg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
     m_adaptor->handleMessage(regMsg, QDBusConnection::sessionBus());
@@ -87,7 +87,7 @@ void tst_ManagerAdaptor::testReleaseMessage()
 {
     // Register
     QDBusMessage regMsg = QDBusMessage::createMethodCall(
-        "test.service", "/org/maemo/resource/manager",
+        "org.nemomobile.test", "/org/maemo/resource/manager",
         "org.maemo.resource.manager", "register");
     regMsg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
     m_adaptor->handleMessage(regMsg, QDBusConnection::sessionBus());
@@ -114,7 +114,7 @@ void tst_ManagerAdaptor::testUpdateMessage()
 {
     // Register
     QDBusMessage regMsg = QDBusMessage::createMethodCall(
-        "test.service", "/org/maemo/resource/manager",
+        "org.nemomobile.test", "/org/maemo/resource/manager",
         "org.maemo.resource.manager", "register");
     regMsg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
     m_adaptor->handleMessage(regMsg, QDBusConnection::sessionBus());

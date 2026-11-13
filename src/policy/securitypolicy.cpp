@@ -23,7 +23,7 @@ SecurityPolicy::SecurityPolicy(QObject* parent)
     : QObject(parent)
 {
     // TODO: move to config
-    m_whitelist << "org.nemomobile.lipstick";
+    m_whitelist << "org.nemomobile";
 }
 
 bool SecurityPolicy::isAllowedSender(const QString& sender) const
