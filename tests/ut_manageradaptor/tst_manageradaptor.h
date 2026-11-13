@@ -18,6 +18,7 @@ private slots:
     void testReleaseMessage();
     void testUpdateMessage();
     void testSecurityDenied();
+    void testClientDisconnect();
 
 private:
     ResourceManager *m_mgr;

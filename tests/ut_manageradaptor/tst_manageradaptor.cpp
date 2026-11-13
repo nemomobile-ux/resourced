@@ -147,4 +147,21 @@ void tst_ManagerAdaptor::testSecurityDenied()
     QCOMPARE(m_mgr->clients().size(), 0);
 }
 
+void tst_ManagerAdaptor::testClientDisconnect()
+{
+    QDBusMessage regMsg = QDBusMessage::createMethodCall(
+        "org.nemomobile.test", "/org/maemo/resource/manager",
+        "org.maemo.resource.manager", "register");
+    regMsg << 1 << 1u << 1u << 4u << 2u << 0u << 0u << "call" << "auto-release" << 50u;
+    m_adaptor->handleMessage(regMsg, QDBusConnection::sessionBus());
+    QCOMPARE(m_mgr->clients().size(), 1);
+
+    QMetaObject::invokeMethod(m_adaptor, "nameOwnerChanged",
+        Q_ARG(QString, "org.nemomobile.test"),
+        Q_ARG(QString, ":1.1"),
+        Q_ARG(QString, QString()));
+
+    QCOMPARE(m_mgr->clients().size(), 0);
+}
+
 QTEST_APPLESS_MAIN(tst_ManagerAdaptor)
