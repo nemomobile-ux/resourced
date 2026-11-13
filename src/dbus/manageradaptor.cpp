@@ -356,7 +356,6 @@ void ManagerAdaptor::printDebug(const QDBusMessage& message)
 
 void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "acquire: wrong argument count";
@@ -394,7 +393,6 @@ void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConne
 
 void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "release: wrong argument count";
@@ -413,12 +411,21 @@ void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConne
     parent()->releaseAll(client);
     emit parent()->clientReleased(client);
 
+    QVariantList replyArgs;
+    replyArgs << (int)9
+              << (uint)client->clientID()
+              << (uint)reqno
+              << (uint)0
+              << QStringLiteral("OK");
+    QDBusMessage reply = message.createReply(replyArgs);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
+
     qCDebug(lcResourceDaemonCoreLog) << "Resources released for client" << client->objectPath();
 }
 
 void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "unregister: wrong argument count";
@@ -437,12 +444,21 @@ void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusCo
     parent()->releaseAll(client);
     parent()->destroyClient(client);
 
+    QVariantList replyArgs;
+    replyArgs << (int)9
+              << (uint)clientId
+              << (uint)reqno
+              << (uint)0
+              << QStringLiteral("OK");
+    QDBusMessage reply = message.createReply(replyArgs);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
+
     qCDebug(lcResourceDaemonCoreLog) << "Client unregistered:" << client->objectPath();
 }
 
 void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnection &connection)
 {
-    Q_UNUSED(connection);
     const QList<QVariant> args = message.arguments();
     if (args.size() < 10) {
         qCWarning(lcResourceDaemonCoreLog) << "update: wrong argument count" << args.size();
@@ -474,6 +490,16 @@ void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnec
     client->setPriority(priority);
 
     parent()->reevaluateClient(client, reqno);
+
+    QVariantList replyArgs;
+    replyArgs << (int)9
+              << (uint)client->clientID()
+              << (uint)reqno
+              << (uint)0
+              << QStringLiteral("OK");
+    QDBusMessage reply = message.createReply(replyArgs);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
 
     qCDebug(lcResourceDaemonCoreLog) << "Client updated:" << client->objectPath() << "new mandatory:" << mandatory;
 }
