@@ -369,6 +369,11 @@ void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConne
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "acquire: wrong argument count";
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     const int rtype = args[0].toInt();
@@ -379,6 +384,11 @@ void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConne
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "acquire: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
@@ -406,6 +416,11 @@ void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConne
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "release: wrong argument count";
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     int rtype = args[0].toInt();
@@ -415,6 +430,11 @@ void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConne
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "release: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
@@ -439,6 +459,11 @@ void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusCo
     const QList<QVariant> args = message.arguments();
     if (args.size() < 3) {
         qCWarning(lcResourceDaemonCoreLog) << "unregister: wrong argument count";
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     int rtype = args[0].toInt();
@@ -448,6 +473,11 @@ void ManagerAdaptor::handleUnregister(const QDBusMessage &message, const QDBusCo
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "unregister: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
@@ -472,6 +502,11 @@ void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnec
     const QList<QVariant> args = message.arguments();
     if (args.size() < 10) {
         qCWarning(lcResourceDaemonCoreLog) << "update: wrong argument count" << args.size();
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)0 << (uint)0 << (int)-1 << QStringLiteral("Invalid argument count");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
     int rtype = args[0].toInt();
@@ -488,6 +523,11 @@ void ManagerAdaptor::handleUpdate(const QDBusMessage &message, const QDBusConnec
     ResourceClient *client = parent()->findClientById(clientId);
     if (!client) {
         qCWarning(lcResourceDaemonCoreLog) << "update: client not found" << clientId;
+        QVariantList replyArgs;
+        replyArgs << (int)9 << (uint)clientId << (uint)reqno << (int)-1 << QStringLiteral("Client not found");
+        QDBusMessage reply = message.createReply(replyArgs);
+        if (incomingSerial(message) != 0)
+            connection.send(reply);
         return;
     }
 
