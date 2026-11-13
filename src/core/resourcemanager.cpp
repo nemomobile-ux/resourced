@@ -123,6 +123,7 @@ void ResourceManager::requestResources(ResourceClient* client,
             grant(client, res);
         } else {
             client->notifyDenied(res);
+            emit adviceResource(client, client->pendingReqno(), resourceMask(res));
         }
     }
 
@@ -302,6 +303,7 @@ void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
             grantedAdded |= bit;
         } else {
             client->notifyDenied(name);
+            emit adviceResource(client, reqno, bit);
         }
     }
 
