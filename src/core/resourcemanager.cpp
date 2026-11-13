@@ -205,14 +205,6 @@ void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
     uint requested = client->mandatory() | client->optional();
     uint currentGranted = client->granted();
 
-    uint newGranted = requested;
-
-    if (newGranted == currentGranted) {
-        qCDebug(lcResourceDaemonCoreLog) << "reevaluateClient: no change for client"
-                                         << client->objectPath() << "granted stays" << newGranted;
-        return;
-    }
-
     auto bitToName = [](uint bit) -> QString {
         switch (bit) {
         case 1:   return "AudioPlayback";
@@ -229,19 +221,96 @@ void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
         }
     };
 
-    uint revoked = currentGranted & ~newGranted;
+    if (requested == currentGranted) {
+        qCDebug(lcResourceDaemonCoreLog) << "reevaluateClient: no change for client"
+                                         << client->objectPath() << "granted stays" << requested;
+        return;
+    }
+
+    uint removed = currentGranted & ~requested;
     for (uint bit = 1; bit <= 512; bit <<= 1) {
-        if (revoked & bit) {
-            QString name = bitToName(bit);
-            if (!name.isEmpty())
-                client->notifyLost(name);
+        if (!(removed & bit))
+            continue;
+        QString name = bitToName(bit);
+        if (name.isEmpty())
+            continue;
+        auto& owners = m_resourceOwners[name];
+        owners.removeAll(client);
+        if (owners.isEmpty())
+            m_resourceOwners.remove(name);
+        client->removeResource(name);
+        client->notifyLost(name);
+    }
+
+    uint added = requested & ~currentGranted;
+    uint grantedAdded = 0;
+    for (uint bit = 1; bit <= 512; bit <<= 1) {
+        if (!(added & bit))
+            continue;
+        QString name = bitToName(bit);
+        if (name.isEmpty())
+            continue;
+
+        auto& owners = m_resourceOwners[name];
+
+        if (owners.isEmpty()) {
+            if (!owners.contains(client))
+                owners.append(client);
+            client->addResource(name);
+            grantedAdded |= bit;
+            continue;
+        }
+
+        if (owners.contains(client)) {
+            grantedAdded |= bit;
+            continue;
+        }
+
+        bool shareable = true;
+        for (ResourceClient* owner : owners) {
+            if (!((owner->share() & bit) && (client->share() & bit) &&
+                  (owner->mask() & bit) && (client->mask() & bit))) {
+                shareable = false;
+                break;
+            }
+        }
+
+        if (shareable) {
+            owners.append(client);
+            client->addResource(name);
+            grantedAdded |= bit;
+            continue;
+        }
+
+        bool canPreemptAll = true;
+        for (ResourceClient* owner : owners) {
+            if (!m_priority->canPreempt(client, owner, name)) {
+                canPreemptAll = false;
+                break;
+            }
+        }
+
+        if (canPreemptAll) {
+            for (ResourceClient* owner : owners) {
+                owner->removeResource(name);
+                owner->notifyLost(name);
+            }
+            m_resourceOwners.remove(name);
+            auto& newOwners = m_resourceOwners[name];
+            newOwners.append(client);
+            client->addResource(name);
+            grantedAdded |= bit;
+        } else {
+            client->notifyDenied(name);
         }
     }
 
+    uint newGranted = (currentGranted & requested) | grantedAdded;
     client->setGranted(newGranted);
     client->syncResourcesFromMask(newGranted);
 
-    emit grantResource(client, reqno, newGranted);
+    if (newGranted != currentGranted)
+        emit grantResource(client, reqno, newGranted);
 
     qCDebug(lcResourceDaemonCoreLog) << "reevaluateClient: client" << client->objectPath()
                                      << "granted changed from" << currentGranted
