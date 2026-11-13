@@ -36,6 +36,7 @@ ResourceManager::ResourceManager(QObject* parent)
 ResourceClient* ResourceManager::createClient(const QDBusMessage& message, int priority)
 {
     ResourceClient* client = new ResourceClient(this);
+    client->setPriority(priority);
 
     m_clients.append(client);
 

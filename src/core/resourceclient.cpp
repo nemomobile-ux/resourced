@@ -22,6 +22,7 @@
 ResourceClient::ResourceClient(
     QObject* parent)
     : QObject(parent)
+    , m_priority(0)
     , m_clientID(0)
     , m_clientReqqno(0)
 {

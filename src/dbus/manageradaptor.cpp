@@ -29,6 +29,19 @@
 #include <qdbusconnectioninterface.h>
 #include <qfileinfo.h>
 
+#include "qdbusmessage_p.h"
+
+static uint32_t incomingSerial(const QDBusMessage& message)
+{
+    struct Mirror {
+        void* d_ptr;
+    };
+    auto* d = reinterpret_cast<const Mirror*>(&message)->d_ptr;
+    if (!d)
+        return 0;
+    return reinterpret_cast<QDBusMessagePrivate*>(d)->serial;
+}
+
 ManagerAdaptor::ManagerAdaptor(ResourceManager* parent)
     : QDBusVirtualObject(parent)
     , m_clientsCount(0)
@@ -188,6 +201,13 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
 
         client = parent()->createClient(message, priority);
         client->setClientType(type);
+        client->setMandatory(mandatory);
+        client->setOptional(optional);
+        client->setShare(share);
+        client->setMask(mask);
+        client->setKlass(klass);
+        client->setMode(mode);
+        client->setPriority(priority);
         uint clientId = m_clientsCount + 1;
         m_clientsCount = m_clientsCount + 1;
 
@@ -221,7 +241,8 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
     qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
     QDBusMessage reply = message.createReply(replyArgs);
-    connection.send(reply);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
 }
 
 /**
@@ -286,7 +307,8 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
     qCDebug(lcResourceDaemonCoreLog) << "ID     : " << replyArgs[1].toUInt();
     qCDebug(lcResourceDaemonCoreLog) << "Req NO : " << replyArgs[2].toUInt();
 
-    connection.send(reply);
+    if (incomingSerial(message) != 0)
+        connection.send(reply);
 
     qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "ACQUIRE completed for client" + client->objectPath();
 
@@ -307,7 +329,8 @@ void ManagerAdaptor::acquireClient(const QDBusMessage& message, const QDBusConne
           << (uint)reqno
           << (uint)1024; // обычно mask/share
 
-    connection.send(grant);
+    if (incomingSerial(message) != 0)
+        connection.send(grant);
     qCDebug(lcResourceDaemonCoreLog)  << Q_FUNC_INFO << "Sent grant() to client:"
                     << client->objectPath()
                     << "rtype=" << 5
@@ -348,7 +371,22 @@ void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConne
     }
 
     client->setPendingReqno(reqno);
-    parent()->requestResources(client, client->resources());
+
+    QStringList requestedResources;
+    uint requestedMask = client->mandatory() | client->optional();
+    if (requestedMask & 1)   requestedResources << "AudioPlayback";
+    if (requestedMask & 2)   requestedResources << "VideoPlayback";
+    if (requestedMask & 4)   requestedResources << "AudioCapture";
+    if (requestedMask & 8)   requestedResources << "Alarm";
+    if (requestedMask & 16)  requestedResources << "VoiceCall";
+    if (requestedMask & 32)  requestedResources << "HardwareKeys";
+    if (requestedMask & 64)  requestedResources << "TouchInput";
+    if (requestedMask & 128) requestedResources << "Location";
+    if (requestedMask & 256) requestedResources << "Network";
+    if (requestedMask & 512) requestedResources << "Display";
+
+    parent()->requestResources(client, requestedResources);
+    client->setPendingReqno(reqno);
 }
 
 void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConnection &connection)
