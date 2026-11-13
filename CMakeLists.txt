@@ -25,3 +25,4 @@ add_subdirectory(tests)
 
 install(FILES systemd/resourced.service DESTINATION /usr/lib/systemd/user)
 install(FILES config/resourced.conf DESTINATION /etc)
+install(FILES config/org.maemo.resource.manager.conf DESTINATION /etc/dbus-1/system.d)
