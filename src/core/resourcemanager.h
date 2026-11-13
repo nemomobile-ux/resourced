@@ -79,8 +79,8 @@ private:
         ResourceClient* newClient,
         const QString& resource);
 
-    // resource → owner
-    QMap<QString, ResourceClient*> m_resourceOwners;
+    // resource → owners
+    QMap<QString, QList<ResourceClient*>> m_resourceOwners;
 
     // active clients
     QList<ResourceClient*> m_clients;

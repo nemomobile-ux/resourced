@@ -75,21 +75,52 @@ void ResourceManager::requestResources(ResourceClient* client,
 
     for (const QString& res : resources) {
 
-        auto* owner = m_resourceOwners.value(res, nullptr);
+        auto& owners = m_resourceOwners[res];
+
+        // already owns
+        if (owners.contains(client))
+            continue;
 
         // free resource
-        if (!owner) {
+        if (owners.isEmpty()) {
             grant(client, res);
             continue;
         }
 
-        // already owns
-        if (owner == client)
-            continue;
+        uint bit = resourceMask(res);
 
-        // PREEMPTION DECISION
-        if (m_priority->canPreempt(client, owner, res)) {
-            preempt(owner, client, res);
+        // shared resource: grant without preemption if all current owners share
+        bool shareable = !owners.isEmpty();
+        for (ResourceClient* owner : owners) {
+            if (!((owner->share() & bit) && (client->share() & bit) &&
+                  (owner->mask() & bit) && (client->mask() & bit))) {
+                shareable = false;
+                break;
+            }
+        }
+
+        if (shareable) {
+            grant(client, res);
+            continue;
+        }
+
+        // preemption decision: all owners must be preemptable
+        bool canPreemptAll = true;
+        for (ResourceClient* owner : owners) {
+            if (!m_priority->canPreempt(client, owner, res)) {
+                canPreemptAll = false;
+                break;
+            }
+        }
+
+        if (canPreemptAll) {
+            for (ResourceClient* owner : owners) {
+                owner->removeResource(res);
+                owner->notifyLost(res);
+            }
+            owners.clear();
+            m_resourceOwners.remove(res);
+            grant(client, res);
         } else {
             client->notifyDenied(res);
         }
@@ -106,7 +137,9 @@ void ResourceManager::releaseAll(ResourceClient* client)
     const auto resources = client->resources();
 
     for (const QString& res : resources) {
-        if (isOwner(res, client))
+        auto& owners = m_resourceOwners[res];
+        owners.removeAll(client);
+        if (owners.isEmpty())
             m_resourceOwners.remove(res);
 
         client->removeResource(res);
@@ -117,7 +150,7 @@ void ResourceManager::releaseAll(ResourceClient* client)
 bool ResourceManager::isOwner(const QString& resource,
     const ResourceClient* client) const
 {
-    return m_resourceOwners.value(resource) == client;
+    return m_resourceOwners.value(resource).contains(const_cast<ResourceClient*>(client));
 }
 
 bool ResourceManager::isAllowedSender(const QString& sender) const
@@ -220,7 +253,10 @@ void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
 void ResourceManager::grant(ResourceClient* client,
     const QString& resource)
 {
-    m_resourceOwners.insert(resource, client);
+    auto& owners = m_resourceOwners[resource];
+    if (!owners.contains(client))
+        owners.append(client);
+
     client->addResource(resource);
 
     uint mask = resourceMask(resource);
@@ -235,10 +271,13 @@ void ResourceManager::preempt(ResourceClient* oldClient,
 {
     qCDebug(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Preempting" + resource + " from " + oldClient->objectPath() + " to " + newClient->objectPath();
 
+    auto& owners = m_resourceOwners[resource];
+    owners.removeAll(oldClient);
+    if (owners.isEmpty())
+        m_resourceOwners.remove(resource);
+
     oldClient->removeResource(resource);
     oldClient->notifyLost(resource);
-
-    m_resourceOwners.remove(resource);
 
     grant(newClient, resource);
 }
