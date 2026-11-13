@@ -409,6 +409,11 @@ void ManagerAdaptor::handleAcquire(const QDBusMessage &message, const QDBusConne
 
     parent()->requestResources(client, requestedResources);
     client->setPendingReqno(reqno);
+
+    if (client->mode() == QStringLiteral("auto-release") && client->resources().isEmpty()) {
+        parent()->releaseAll(client);
+        emit parent()->clientReleased(client);
+    }
 }
 
 void ManagerAdaptor::handleRelease(const QDBusMessage &message, const QDBusConnection &connection)
