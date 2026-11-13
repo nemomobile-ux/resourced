@@ -31,6 +31,24 @@
 
 #include "qdbusmessage_p.h"
 
+static bool isSenderAllowed(const QString& sender, ResourceManager* manager)
+{
+    if (manager->isAllowedSender(sender))
+        return true;
+
+    QDBusConnectionInterface* iface = QDBusConnection::systemBus().interface();
+    if (!iface)
+        return false;
+
+    const QStringList services = iface->registeredServiceNames();
+    for (const QString& service : services) {
+        if (iface->serviceOwner(service).value() == sender && manager->isAllowedSender(service))
+            return true;
+    }
+
+    return false;
+}
+
 static uint32_t incomingSerial(const QDBusMessage& message)
 {
     struct Mirror {
@@ -236,7 +254,7 @@ void ManagerAdaptor::registerClient(const QDBusMessage& message, const QDBusConn
     if (args.size() != 10) {
         qCWarning(lcResourceDaemonCoreLog) << Q_FUNC_INFO << "Wrong arguments";
         replyArgs << 0 << 0 << 0 << -1 << "Invalid argument count";
-    } else if (parent()->isAllowedSender(message.service())) {
+    } else if (isSenderAllowed(message.service(), parent())) {
 
         // ---- Parse arguments ----
         const int type = args[0].toInt();
