@@ -44,6 +44,9 @@ Q_SIGNALS: // SIGNALS
     void ClientRegistered(const QString& client_name, const QDBusObjectPath& client_path);
     void ClientUnregistered(const QDBusObjectPath& client_path);
 
+private slots:
+    void nameOwnerChanged(const QString& name, const QString& oldOwner, const QString& newOwner);
+
 private:
     void registerClient(const QDBusMessage& message, const QDBusConnection& connection);
     void unregisterClient(const QDBusObjectPath& path);

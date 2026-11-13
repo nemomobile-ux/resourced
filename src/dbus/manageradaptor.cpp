@@ -50,6 +50,14 @@ ManagerAdaptor::ManagerAdaptor(ResourceManager* parent)
         this, &ManagerAdaptor::sendGrant);
     connect(parent, &ResourceManager::adviceResource,
         this, &ManagerAdaptor::sendAdvice);
+
+    QDBusConnection::systemBus().connect(
+        QStringLiteral("org.freedesktop.DBus"),
+        QStringLiteral("/org/freedesktop/DBus"),
+        QStringLiteral("org.freedesktop.DBus"),
+        QStringLiteral("NameOwnerChanged"),
+        this,
+        SLOT(nameOwnerChanged(QString,QString,QString)));
 }
 
 ManagerAdaptor::~ManagerAdaptor()
@@ -593,6 +601,23 @@ void ManagerAdaptor::sendGrant(ResourceClient *client, uint reqno, uint grantedM
 
     QDBusConnection::systemBus().asyncCall(grantCall);
     qCDebug(lcResourceDaemonCoreLog) << "Sent grant to" << client->objectPath() << "reqno" << reqno << "mask" << grantedMask;
+}
+
+void ManagerAdaptor::nameOwnerChanged(const QString& name, const QString& oldOwner, const QString& newOwner)
+{
+    if (name.isEmpty() || oldOwner.isEmpty() || !newOwner.isEmpty())
+        return;
+
+    QList<ResourceClient*> toDestroy;
+    for (ResourceClient* client : parent()->clients()) {
+        if (client->serviceName() == name)
+            toDestroy.append(client);
+    }
+
+    for (ResourceClient* client : toDestroy) {
+        parent()->releaseAll(client);
+        parent()->destroyClient(client);
+    }
 }
 
 void ManagerAdaptor::sendAdvice(ResourceClient *client, uint reqno, uint adviceMask)
