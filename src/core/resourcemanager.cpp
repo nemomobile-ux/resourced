@@ -175,10 +175,33 @@ void ResourceManager::reevaluateClient(ResourceClient *client, uint reqno)
         return;
     }
 
-    client->setGranted(newGranted);
+    auto bitToName = [](uint bit) -> QString {
+        switch (bit) {
+        case 1:   return "AudioPlayback";
+        case 2:   return "VideoPlayback";
+        case 4:   return "AudioCapture";
+        case 8:   return "Alarm";
+        case 16:  return "VoiceCall";
+        case 32:  return "HardwareKeys";
+        case 64:  return "TouchInput";
+        case 128: return "Location";
+        case 256: return "Network";
+        case 512: return "Display";
+        default:  return QString();
+        }
+    };
 
-    client->syncResourcesFromMask(newGranted);
+    uint revoked = currentGranted & ~newGranted;
+    for (uint bit = 1; bit <= 512; bit <<= 1) {
+        if (revoked & bit) {
+            QString name = bitToName(bit);
+            if (!name.isEmpty())
+                client->notifyLost(name);
+        }
+    }
+
     client->setGranted(newGranted);
+    client->syncResourcesFromMask(newGranted);
 
     emit grantResource(client, reqno, newGranted);
 
